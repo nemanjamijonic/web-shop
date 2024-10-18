@@ -1,0 +1,7 @@
+testkorisnik|123123|nemanja|mijonic|Male|test@gmail.com|15-06-2023|Customer|False
+kupac|test|peratest|perictest|Female|testperarope@gmail.com|20-04-2005|Customer|False
+mira|mira|mira|miric|Female|mirka@gmail.com|11-05-2007|Customer|False
+zivko|zile|zivorad|zivadinovic|Male|testic@gmail.com|11-11-1998|Customer|False
+newUser|pass|hehe|hehe|Female|ghsda@gmail.com|25-06-2023|Customer|False
+aa|aa|aa|aa|Female|aa|14-06-2023|Customer|True
+novikorisniktest|novitest|novinovitest|3211|Male|nemanja@gmail.com|18-10-1968|Customer|False

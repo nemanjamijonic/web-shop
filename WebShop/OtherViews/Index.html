@@ -1,0 +1,268 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Index</title>
+    <link rel="stylesheet" href="../Content/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/Content/Site.css" />
+    <script src="../Scripts/jquery-3.4.1.min.js"></script>
+    <script type="text/javascript">
+
+        var Products = new Array();
+
+        $(document).ready(function () {
+
+            $.get("/products/GetProducts", function (data, status) {
+                ShowProducts(data);
+            });
+
+
+            $("#sortProducts").click(function () {
+                
+                var object = new Object();
+                object.SortBy = $("input[name='sortby']:checked").val();
+                object.SortOrder = $("input[name='sortorder']:checked").val();
+
+                var sortBy = parseInt(object.SortBy);
+                var sortOrder = parseInt(object.SortOrder);
+
+                $.ajax({
+                    url: '/products/Sort',
+                    type: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    data: JSON.stringify(object),
+                    success: function (data) {
+                        object.SortBy = sortBy;
+                        object.SortOrder = sortOrder;
+                        ShowProducts(data);
+
+
+                    },
+                    error: function (data) {
+                    }
+                });
+
+            });
+
+            $("#searchProducts").click(function () {
+
+                var object = new Object();
+                object.Name = $("input[type=text][name=name]").val().toLowerCase();
+                object.MinPrice = $("input[type=text][name=minprice]").val().toLowerCase();
+                object.MaxPrice = $("input[type=text][name=maxprice]").val().toLowerCase();
+                object.City = $("input[type=text][name=city]").val().toLowerCase();
+
+                if (object.Name === "" && object.MinPrice === "" && object.MaxPrice === "" && object.City === "")
+                {
+                    $.get("/products/GetProducts", function (data, status) {
+                        ShowProducts(data);
+                    });
+                }
+
+                var minPrice = parseFloat(object.MinPrice);
+                var maxPrice = parseFloat(object.MaxPrice);
+
+                if (minPrice < 0) {
+                    alert("MIN PRICE CANT BE NEGATIVE VALUE!");
+                    return;
+                }
+
+                if (maxPrice < 0) {
+                    alert("MAX PRICE CANT BE NEGATIVE VALUE!");
+                    return;
+                }
+
+                if (Number.isNaN(minPrice)) {
+                    minPrice = 0;
+                    object.MinPrice = 0;
+                }
+
+                if (Number.isNaN(maxPrice)) {
+                    maxPrice = Number.MAX_VALUE;
+                    object.MaxPrice = Number.MAX_VALUE;
+                }
+
+                if (minPrice > maxPrice) {
+                    alert("MIN PRICE CANT BE GREATER THAN MAX PRICE!");
+                    return;
+                }
+
+                var counter = 0;
+
+                if (minPrice !== 0) {
+                    counter++;
+                }
+
+                if (maxPrice !== Number.MAX_VALUE) {
+                    counter++;
+                }
+
+               
+                if (object.Name.trim() !== "") {
+                    counter++;
+                }
+
+                if (object.City.trim() !== "") {
+                    counter++;
+                }
+
+                if (counter >= 2) {
+                    object.IsCombined = true;
+                }
+
+
+
+                $.ajax({
+                    url: '/products/Search',
+                    type: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    data: JSON.stringify(object),
+                    success: function (data) {
+                        object.Name = $("input[type=text][name=name]").val("");
+                        object.MinPrice = $("input[type=text][name=minprice]").val("");
+                        object.MaxPrice = $("input[type=text][name=maxprice]").val("");
+                        object.City = $("input[type=text][name=city]").val("");
+                        ShowProducts(data);
+
+
+                    },
+                    error: function (data) {
+                    }
+                });
+
+            });
+
+
+            function ShowProducts(data) {
+
+                var AllProducts = "";
+                Products = data;
+
+                AllProducts += "<table class='table table-striped'>";
+                AllProducts += "<thread><tr> <th scope='col'> Name </th> <th scope='col'> Price </th> <th scope='col'> Quantity </th>"
+                    + "<th scope = 'col' > Description </th > <th scope='col'> Image </th> <th scope='col'> PostDate </th> <th scope='col'> City </th>"
+                    + "<th scope='col'> Review </th> </tr> </thread> ";
+                AllProducts += "<tbody>";
+                for (product in data) {
+                    var picture = "../Images/" + `${data[product].ImageURL}` + ".jpg";
+                    var postDate = new Date(`${data[product].PostDate}`);
+                    var formattedDate = postDate.toLocaleDateString("en-GB");
+
+                    if (data[product].Reviews.length > 0) {
+
+                        AllProducts += "<tr>" +
+                            "<td>" + `${data[product].Name}` + "</td>" +
+                            "<td>" + `${data[product].Price}` + "</td>" +
+                            "<td>" + `${data[product].Quantity}` + "</td>" +
+                            "<td>" + `${data[product].Description}` + "</td>" +
+                            "<td>" + "<img class='picture' src=" + picture + " />" + "</td>" +
+                            "<td>" + formattedDate + "</td>" +
+                            "<td>" + `${data[product].City}` + "</td>" +
+                            "<td>" + "<a href=Reviews.html?productId=" + `${data[product].Id}` + "> Show reviews </a>" + "</td>" +
+                            "</tr>";
+                    } else {
+
+                        AllProducts += "<tr>" +
+                            "<td>" + `${data[product].Name}` + "</td>" +
+                            "<td>" + `${data[product].Price}` + "</td>" +
+                            "<td>" + `${data[product].Quantity}` + "</td>" +
+                            "<td>" + `${data[product].Description}` + "</td>" +
+                            "<td>" + "<img class='picture' src=" + picture + " />" + "</td>" +
+                            "<td>" + formattedDate + "</td>" +
+                            "<td>" + `${data[product].City}` + "</td>" +
+                            "<td>" + "No reviews" + "</td>" +
+                            "</tr>";
+
+                    }
+
+
+                }
+                AllProducts += "</tbody>";
+                AllProducts += "</table>";
+
+                $("#showProducts").html(AllProducts);
+            }
+
+        });
+
+        
+
+       
+
+        
+    </script>
+
+</head>
+<body>
+
+
+    <div class="nav">
+        <ul class="nav">
+            <li class="nav-item" style="float: left;">
+                <a class="nav-link active" style="color: black;" href="/OtherViews/Index.html">Home</a>
+            </li>
+            <li class="nav-item" style="float: right; margin-right: 10px">
+                <a class="nav-link" style="color: black;" href="/OtherViews/Register.html">Register</a>
+            </li>
+            <li class="nav-item" style="float: right; margin-right: 10px">
+                <a class="nav-link" style="color: black;" href="/OtherViews/Login.html">Login</a>
+            </li>
+
+        </ul>
+    </div>
+    <br />
+    <div>
+
+        <div style="border:1px dashed black;">
+            <label class="move_labels" style=""> Sorting:  </label>
+            <input type="radio" name="sortby" value="0">
+            <label> Sort By Name </label>
+
+            <input type="radio" name="sortby" value="2">
+            <label> Sort By Price </label>
+
+            <input type="radio" name="sortby" value="1">
+            <label> Sort By PostDate </label>
+
+            <label class="move_labels" style=""> Order:  </label>
+
+            <input type="radio" name="sortorder" value="0">
+            <label> Ascending </label>
+
+            <input type="radio" name="sortorder" value="1">
+            <label> Descending </label>
+
+            <input type="submit" style="padding-left: 10px" value=" Sort " id="sortProducts">
+
+        </div>
+
+
+    </div>
+    <br />
+    <div style="border:1px dashed black;">
+        <label > Name </label>
+        <input type="text" name="name" />
+
+        <label > Min Price </label>
+        <input type="text" name="minprice" />
+
+        <label > Max Price </label>
+        <input type="text" name="maxprice" />
+
+        <label> City </label>
+        <input type="text" name="city" />
+
+        <input type="submit" value=" Search " id="searchProducts">
+
+    </div>
+
+    <br /> <br />
+    <div id="showProducts">
+
+    </div>
+
+
+</body>
+</html>

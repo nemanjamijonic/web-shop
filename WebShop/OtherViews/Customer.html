@@ -1,0 +1,563 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Index</title>
+    <link rel="stylesheet" href="../Content/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/Content/Site.css" />
+    <script src="../Scripts/jquery-3.4.1.min.js"></script>
+    <script type="text/javascript">
+
+        var Products = new Array();
+
+        $(document).ready(function () {
+
+            $.get("/users/GetLoggedinUser", function (data, status) {
+                //console.log(data)
+
+                if (data == null || data.Role != 0) {
+                    alert("You are not customer!")
+                    location.href = "Login.html";
+                }
+
+
+
+
+            });
+
+            $.get("/products/GetProducts", function (data, status) {
+                ShowSearchAndSort();
+                ShowProducts(data);
+            });
+
+            $("#orders").click(function () {
+                HideSearchAndSort();
+                $.get("/customers/GetOrders", function (data, status) {
+                    ShowOrders(data);
+                });
+
+
+            });
+
+            $("#favouriteProducts").click(function () {
+                HideSearchAndSort();
+                $.get("/customers/GetFavouriteProducts", function (data, status) {
+                    ShowProducts(data);
+                });
+
+            });
+
+
+
+
+            
+
+
+            $("#sortProductsBtn").click(function () {
+
+                var object = new Object();
+                object.SortBy = $("input[name='sortby']:checked").val();
+                object.SortOrder = $("input[name='sortorder']:checked").val();
+
+                var sortBy = parseInt(object.SortBy);
+                var sortOrder = parseInt(object.SortOrder);
+
+                $.ajax({
+                    url: '/products/Sort',
+                    type: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    data: JSON.stringify(object),
+                    success: function (data) {
+                        object.SortBy = sortBy;
+                        object.SortOrder = sortOrder;
+                        ShowProducts(data);
+
+
+                    },
+                    error: function (data) {
+                    }
+                });
+
+            });
+
+            $("#searchProductsBtn").click(function () {
+
+                var object = new Object();
+                object.Name = $("input[type=text][name=name]").val().toLowerCase();
+                object.MinPrice = $("input[type=text][name=minprice]").val().toLowerCase();
+                object.MaxPrice = $("input[type=text][name=maxprice]").val().toLowerCase();
+                object.City = $("input[type=text][name=city]").val().toLowerCase();
+
+                if (object.Name === "" && object.MinPrice === "" && object.MaxPrice === "" && object.City === "")
+                {
+                    console.log("NEMANJA");
+                    $.get("/products/GetProducts", function (data, status) {
+                        console.log(data);
+                        ShowProducts(data);
+                    });
+                }
+
+                var minPrice = parseFloat(object.MinPrice);
+                var maxPrice = parseFloat(object.MaxPrice);
+
+                if (minPrice < 0) {
+                    alert("MIN PRICE CANT BE NEGATIVE VALUE!");
+                    return;
+                }
+
+                if (maxPrice < 0) {
+                    alert("MAX PRICE CANT BE NEGATIVE VALUE!");
+                    return;
+                }
+
+                if (Number.isNaN(minPrice)) {
+                    minPrice = 0;
+                    object.MinPrice = 0;
+                }
+
+                if (Number.isNaN(maxPrice)) {
+                    maxPrice = Number.MAX_VALUE;
+                    object.MaxPrice = Number.MAX_VALUE;
+                }
+
+                if (minPrice > maxPrice) {
+                    alert("MIN PRICE CANT BE GREATER THAN MAX PRICE!");
+                    return;
+                }
+
+                var counter = 0;
+
+                if (minPrice !== 0) {
+                    counter++;
+                }
+
+                if (maxPrice !== 0) {
+                    counter++;
+                }
+
+
+                if (object.Name.trim() !== "") {
+                    counter++;
+                }
+
+                if (object.City.trim() !== "") {
+                    counter++;
+                }
+
+                if (counter >= 2) {
+                    object.IsCombined = true;
+                }
+
+
+
+                $.ajax({
+                    url: '/products/Search',
+                    type: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    data: JSON.stringify(object),
+                    success: function (data) {
+                        object.Name = $("input[type=text][name=name]").val("");
+                        object.MinPrice = $("input[type=text][name=minprice]").val("");
+                        object.MaxPrice = $("input[type=text][name=maxprice]").val("");
+                        object.City = $("input[type=text][name=city]").val("");
+                        ShowProducts(data);
+
+
+                    },
+                    error: function (data) {
+                    }
+                });
+
+            });
+
+            $("#logout").click(function () {
+
+                $.post("/users/Logout", function () {
+                    location.href = "Login.html";
+                });
+
+            });
+
+            $("#editProfile").click(function () {
+
+                $.get("/users/GetLoggedinUser", function (data, status) {
+                    //console.log(data)
+                    location.href = "ViewProfile.html?username=" + data.Username;
+                });
+
+            });
+
+          
+
+        });
+
+
+        function HideSearchAndSort() {
+            $('#searchProducts').hide();
+            $('#sortProducts').hide();
+        }
+
+        function ShowSearchAndSort() {
+            $('#searchProducts').show();
+            $('#sortProducts').show();
+        }
+
+        function ShowProducts(data) {
+
+            var AllProducts = "";
+            Products = data;
+
+            AllProducts += "<table class='table table-striped'>";
+            AllProducts += "<thread><tr> <th scope='col'> Id </th>  <th scope='col'> Name </th> <th scope='col'> Price </th> <th scope='col'> Quantity </th>"
+                + "<th scope = 'col' > Description </th > <th scope='col'> Image </th> <th scope='col'> PostDate </th> <th scope='col'> City </th>"
+                + "<th scope='col'> Add to favourite </th> <th scope='col'> Review </th>  <th scope='col'> Order </th> </tr> </thread> ";
+            AllProducts += "<tbody>";
+            for (product in data) {
+                var picture = "../Images/" + `${data[product].ImageURL}` + ".jpg";
+                var postDate = new Date(`${data[product].PostDate}`);
+                var formattedDate = postDate.toLocaleDateString("en-GB");
+
+
+
+                if (data[product].Reviews.length > 0) {
+
+                    AllProducts += "<tr>" +
+                        "<td id='productId'>" + `${data[product].Id}` + "</td>" +
+                        "<td>" + `${data[product].Name}` + "</td>" +
+                        "<td>" + `${data[product].Price}` + "</td>" +
+                        "<td>" + `${data[product].Quantity}` + "</td>" +
+                        "<td>" + `${data[product].Description}` + "</td>" +
+                        "<td>" + "<img class='picture' src=" + picture + " />" + "</td>" +
+                        "<td>" + formattedDate + "</td>" +
+                        "<td>" + `${data[product].City}` + "</td>" +
+                        "<td>" + "<button onclick='addToFavourites(\"" + data[product].Id + "\")'>&#11088;</button>" + "</td>" +
+                        "<td>" + "<a href=Reviews.html?productId=" + `${data[product].Id}` + "> Show reviews </a>" + "</td>" +
+                        "<td>" + "<button onclick='createOrder(\"" + data[product].Id + "\", \"" + data[product].Quantity + "\")'>Order</button>" + "</td>" +
+                        "</tr>";
+                } else {
+
+                    AllProducts += "<tr>" +
+                        "<td>" + `${data[product].Id}` + "</td>" +
+                        "<td>" + `${data[product].Name}` + "</td>" +
+                        "<td>" + `${data[product].Price}` + "</td>" +
+                        "<td>" + `${data[product].Quantity}` + "</td>" +
+                        "<td>" + `${data[product].Description}` + "</td>" +
+                        "<td>" + "<img class='picture' src=" + picture + " />" + "</td>" +
+                        "<td>" + formattedDate + "</td>" +
+                        "<td>" + `${data[product].City}` + "</td>" +
+                        "<td>" + "<button onclick='addToFavourites(\"" + data[product].Id + "\")'>&#11088;</button>" + "</td>" +
+                        "<td>" + "No reviews" + "</td>" +
+                        "<td>" + "<button onclick='createOrder(\"" + data[product].Id + "\", \"" + data[product].Quantity + "\")'>Order</button>" + "</td>" +
+                        "</tr>";
+
+                }
+            }
+            AllProducts += "</tbody>";
+            AllProducts += "</table>";
+
+            $("#content").html(AllProducts);
+        }
+
+        function ShowOrders(data) {
+
+            var AllOrders = "";
+
+
+            AllOrders += "<table class='table table-striped'>";
+            AllOrders += "<thread><tr> <th scope='col'> Id </th> <th scope='col'> ProductId </th> <th scope='col'> Product Name </th>"
+                + "<th scope = 'col' > Product Price </th> <th scope = 'col' > Product image </th>  <th scope='col'> Customer name </th>  <th scope='col'> OrderQuantity </th> <th scope='col'> OrderDate </th> <th scope='col'> OrderState </th> <th scope='col'> Complete Order </th>"
+                + " </tr> </thread> ";
+            AllOrders += "<tbody>";
+            for (order in data) {
+                var picture = "../Images/" + `${data[order].Product.ImageURL}` + ".jpg";
+                var postDate = new Date(`${data[order].OrderDate}`);
+                var formattedDate = postDate.toLocaleDateString("en-GB");
+
+                var orderState = "";
+                if (data[order].OrderState == 0) {
+                    orderState = "Active";
+                } else if (data[order].OrderState == 1) {
+                    orderState = "Completed";
+                } else {
+                    orderState = "Canceled";
+                }
+
+                if (orderState == "Active") {
+                    AllOrders += "<tr>" +
+                        "<td>" + `${data[order].Id}` + "</td>" +
+                        "<td>" + `${data[order].Product.Id}` + "</td>" +
+                        "<td>" + `${data[order].Product.Name}` + "</td>" +
+                        "<td>" + `${data[order].Product.Price}` + "</td>" +                      
+                        "<td>" + "<img class='picture' src=" + picture + " />" + "</td>" +
+                        "<td>" + `${data[order].Customer.Name}` + "</td>" +
+                        "<td>" + `${data[order].Quantity}` + "</td>" +
+                        "<td>" + formattedDate + "</td>" +
+                        "<td>" + orderState + "</td>" +
+                        "<td>" + "<button onclick='completeOrder(\"" + data[order].Id + "\")'>Complete order</button>" + "</td>" +
+                        "</tr>";
+                } else {
+
+                    AllOrders += "<tr>" +
+                        "<td>" + `${data[order].Id}` + "</td>" +
+                        "<td>" + `${data[order].Product.Id}` + "</td>" +
+                        "<td>" + `${data[order].Product.Name}` + "</td>" +
+                        "<td>" + `${data[order].Product.Price}` + "</td>" +
+                        "<td>" + "<img class='picture' src=" + picture + " />" + "</td>" +
+                        "<td>" + `${data[order].Customer.Name}` + "</td>" +
+                        "<td>" + `${data[order].Quantity}` + "</td>" +
+                        "<td>" + formattedDate + "</td>" +
+                        "<td>" + orderState + "</td>" +
+                        "<td>" + "<a href=AddReview.html?productId=" + `${data[order].Product.Id}` + "> Add review </a>" + "</td>" +
+                        "</tr>";
+                }
+
+
+
+
+            }
+            AllOrders += "</tbody>";
+            AllOrders += "</table>";
+
+            $("#content").html(AllOrders);
+        }
+
+        function addToFavourites(productId) {
+            //alert(quantity)
+            //console.log(productId)
+
+
+            var object = new Object();
+            object.ProductId = productId
+
+            $.ajax({
+                url: '/customers/MarkAsFavourite',
+                type: "POST",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                data: JSON.stringify(object),
+                statusCode: {
+                    200: function (data) {
+
+                        var object = JSON.stringify(data);
+                        object = jQuery.parseJSON(object);
+
+                        var text = "Product with id " + object.Id + "added to favourites";
+
+                        alert(text);
+
+
+                    },
+                    403: function (data) {
+                        alert(data.responseText);
+                    },
+                    404: function (data) {
+                        alert(data.responseText);
+                    },
+                    400: function (data) {
+                        alert(data.responseText);
+                    }
+                }
+            });
+        }
+
+
+        function createOrder(productId, quantity) {
+            //alert(productId)
+            //console.log(productId)
+
+            var numberOfProducts;
+
+            while (!numberOfProducts) {
+                numberOfProducts = prompt("Enter number of products..");
+            };
+
+            if (!isNumeric(numberOfProducts)) {
+                alert("Please enter number")
+                return;
+            }
+
+            if (parseInt(numberOfProducts) > quantity) {
+                alert("Not enough products!")
+                return;
+            }
+
+            if (numberOfProducts <= 0) {
+                alert("Please enter positive number!")
+                return;
+            }
+
+            var object = new Object();
+            object.Quantity = numberOfProducts
+            object.ProductId = productId
+
+            $.ajax({
+                url: '/customers/CreateOrder',
+                type: "POST",
+                async: false,
+                contentType: "application/json; charset=utf-8",
+                async: false,
+                dataType: "json",
+                data: JSON.stringify(object),
+                statusCode: {
+                    200: function (data) {
+
+                        var object = JSON.stringify(data);
+                        object = jQuery.parseJSON(object);
+
+                        var text = "Created order with id " + object.Id;
+
+                        alert(text);
+
+
+                    },
+                    403: function (data) {
+                        alert(data.responseText);
+                    },
+                    404: function (data) {
+                        alert(data.responseText);
+                    },
+                    400: function (data) {
+                        alert(data.responseText);
+                    }
+                }
+            });
+
+            $.get("/products/GetProducts", function (data, status) {
+                ShowSearchAndSort();
+                ShowProducts(data);
+            });
+
+        }
+
+        function completeOrder(orderId) {
+          
+
+            var object = new Object();
+            object.OrderId = orderId
+
+            $.ajax({
+                url: '/customers/CompleteOrder',
+                type: "POST",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                data: JSON.stringify(object),
+                statusCode: {
+                    200: function (data) {
+
+                        var object = JSON.stringify(data);
+                        object = jQuery.parseJSON(object);
+
+                        var text = "Completed order with id " + object.Id;
+
+                        alert(text);
+
+
+                    },
+                    403: function (data) {
+                        alert(data.responseText);
+                    },
+                    404: function (data) {
+                        alert(data.responseText);
+                    },
+                    400: function (data) {
+                        alert(data.responseText);
+                    }
+                }
+            });
+
+            $.get("/customers/GetOrders", function (data, status) {
+                ShowOrders(data);
+            });
+
+        }
+
+
+        function isNumeric(str) {
+            if (typeof str != "string") return false
+            return !isNaN(str) && 
+                !isNaN(parseFloat(str)) 
+        }
+
+    </script>
+
+</head>
+<body>
+
+
+    <div class="nav">
+        <ul class="nav">
+            <li class="nav-item" style="float: left;">
+                <a class="nav-link active" style="color: black;" href="/OtherViews/Customer.html">Home</a>
+            </li>
+            <li class="nav-item" style="float: left;">
+                <a class="nav-link active" id="orders" style="color: black;">Orders</a>
+            </li>
+            <li class="nav-item" style="float: left;">
+                <a class="nav-link active" id="favouriteProducts" style="color: black;">Favourite products</a>
+            </li>
+            <li class="nav-item" style="float: right; margin-right: 10px">
+                <a class="nav-link" id="editProfile" style="color: black;">Profile</a>
+            </li>
+            <li class="nav-item" style="float: right; margin-right: 10px">
+                <a class="nav-link" id="logout" style="color: black;" href="/OtherViews/Login.html">Logout</a>
+            </li>
+
+
+        </ul>
+    </div>
+    <br />
+    <div id="sortProducts">
+
+        <div style="border:1px dashed black;">
+            <label class="move_labels" style=""> Sorting:  </label>
+            <input type="radio" name="sortby" value="0">
+            <label> Sort By Name </label>
+
+            <input type="radio" name="sortby" value="2">
+            <label> Sort By Price </label>
+
+            <input type="radio" name="sortby" value="1">
+            <label> Sort By PostDate </label>
+
+            <label class="move_labels" style=""> Order:  </label>
+
+            <input type="radio" name="sortorder" value="0">
+            <label> Ascending </label>
+
+            <input type="radio" name="sortorder" value="1">
+            <label> Descending </label>
+
+            <input type="submit" style="padding-left: 10px" value=" Sort " id="sortProductsBtn">
+
+        </div>
+
+
+    </div>
+    <br />
+    <div style="border:1px dashed black;" id="searchProducts">
+        <label> Name </label>
+        <input type="text" name="name" />
+
+        <label> Min Price </label>
+        <input type="text" name="minprice" />
+
+        <label> Max Price </label>
+        <input type="text" name="maxprice" />
+
+        <label> City </label>
+        <input type="text" name="city" />
+
+        <input type="submit" value=" Search " id="searchProductsBtn">
+
+    </div>
+
+    <br /> <br />
+    <div id="content">
+
+    </div>
+
+
+</body>
+</html>

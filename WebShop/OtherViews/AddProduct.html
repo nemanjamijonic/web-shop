@@ -1,0 +1,264 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Add Product</title>
+    <link rel="stylesheet" href="/Content/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/Content/Site.css" />
+    <script src="/Scripts/jquery-3.4.1.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+
+
+
+            $.get("/users/GetLoggedinUser", function (data, status) {
+
+                if (data == null || data.Role == 0) {
+                    alert("You are not allowed!")
+                    location.href = "Login.html";
+                }
+            });
+
+            $("#home").click(function () {
+                $.get("/users/GetLoggedinUser", function (data, status) {
+
+                    if (data.Role == 1) {
+                        location.href = "Salesman.html";
+                    }
+                    else
+                    {
+                        location.href = "Admin.html";
+                    }
+                    
+                });
+            });
+
+            $("#editProfile").click(function () {
+
+                $.get("/users/GetLoggedinUser", function (data, status) {
+                    location.href = "ViewProfile.html?username=" + data.Username;
+                });
+
+            });
+
+
+            $("#logout").click(function () {
+
+                $.post("/users/Logout", function () {
+                    location.href = "Login.html";
+                });
+
+            });
+
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const productId = urlParams.get('productId');
+
+            var isProductUpdate = productId != "" && productId != null;
+
+            if (isProductUpdate) {
+                var url = "/products/GetById?productId=" + productId;
+                $.get(url, function (data, status) {
+
+                    $("input[type=text][name=name]").val(data.Name);
+                    $("input[type=text][name=price]").val(data.Price);
+                    $("input[type=text][name=quantity]").val(data.Quantity);
+                    $("input[type=text][name=description]").val(data.Description);
+                    $("input[type=text][name=city]").val(data.City);
+                   // $("input[type=text][name=productImage]").val(data.ImageURL);
+
+
+                });
+            }
+
+
+            $("#addProduct").click(function () {
+
+                var object = new Object();
+
+                object.Name = $("input[type=text][name=name]").val();
+                object.Description = $("input[type=text][name=description]").val();
+                object.City = $("input[type=text][name=city]").val();
+
+                var price = $("input[type=text][name=price]").val();
+                var quantity = $("input[type=text][name=quantity]").val();
+
+                object.Price = parseFloat(price);
+                object.Quantity = parseInt(quantity);
+
+                var productImage = $("input[type=file][name=productImage]").val();
+                var imageName = productImage.slice(12, productImage.length);
+                object.ImageURL = imageName.split('.')[0]
+
+
+                if (object.Name.trim() == "") {
+                    alert("Name cannot be empty!")
+                    return
+                }
+
+                if (object.Price < 0) {
+                    alert("Price cannot be negative");
+                    return;
+                }
+
+                if (price.trim() == "") {
+                    alert("Price cannot be empty!")
+                    return
+                }
+
+                if (object.Quantity < 0) {
+                    alert("Quantity cannot be negative");
+                    return;
+                }
+
+
+                if (quantity.trim() == "") {
+                    alert("Quantity cannot be empty!")
+                    return
+                }
+
+                if (object.Description.trim() == "") {
+                    alert("Description cannot be empty!")
+                    return
+                }
+
+                if (object.City.trim() == "") {
+                    alert("City cannot be empty!")
+                    return
+                }
+
+               
+                if (object.ImageURL.trim() == "") {
+                    alert("ImageURL cannot be empty!")
+                    return
+                }
+
+  
+                if (productId != null && productId != "") {
+
+                    object.Id = productId
+
+                    $.ajax({
+                        url: '/salesmans/EditProduct',
+                        type: 'PUT',
+                        contentType: 'application/json; charset=utf-8',
+                        dataType: 'json',
+                        data: JSON.stringify(object),
+                        statusCode: {
+                            200: function (data) {
+
+                                var object = JSON.stringify(data);
+                                object = jQuery.parseJSON(object);
+
+                                alert("Product successfully updated!");
+
+                                if (data.Role == 1) {
+                                    location.href = "Salesman.html";
+                                }
+                                else {
+                                    location.href = "Admin.html";
+                                }
+
+                            },
+                            401: function (data) {
+                                alert(data.responseText);
+                            },
+                            400: function (data) {
+                                alert(data.responseText);
+                            },
+                            405: function (data) {
+                                alert(data.responseText);
+                            }
+                        }
+                    });
+
+                } else {
+
+
+                    $.ajax({
+                        url: '/salesmans/CreateProduct',
+                        type: 'POST',
+                        contentType: 'application/json; charset=utf-8',
+                        dataType: 'json',
+                        data: JSON.stringify(object),
+                        statusCode: {
+                            200: function (data) {
+
+                                var object = JSON.stringify(data);
+                                object = jQuery.parseJSON(object);
+
+                                alert("Product successfully added!");
+
+                                location.href = "Salesman.html";
+
+                            },
+                            401: function (data) {
+                                alert(data.responseText);
+                            },
+                            400: function (data) {
+                                alert(data.responseText);
+                            }
+                        }
+                    });
+                }
+
+
+            });
+        });
+    </script>
+
+</head>
+<body>
+    <div class="nav">
+        <ul class="nav">
+            <li class="nav-item" style="float: left;">
+                <a class="nav-link active" style="color: black;" id="home">Home</a>
+            </li>
+            <li class="nav-item" style="float: left;">
+                <a class="nav-link active" style="color: black;" href="/OtherViews/AddProduct.html">Add Product</a>
+            </li>
+            <li class="nav-item" style="float: right; margin-right: 10px">
+                <a class="nav-link" id="editProfile" style="color: black;">Profile</a>
+            </li>
+            <li class="nav-item" style="float: right; margin-right: 10px">
+                <a class="nav-link" id="logout" style="color: black;" href="/OtherViews/Login.html">Logout</a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-md-offset-3 form-container">
+                <h2>Product</h2>
+
+                <div class="form-group">
+                    <label for="name">Name</label>
+                    <input type="text" class="form-control" name="name" placeholder="Enter product name">
+                </div>
+                <div class="form-group">
+                    <label for="price">Price</label>
+                    <input type="text" class="form-control" name="price" placeholder="Enter price">
+                </div>
+                <div class="form-group">
+                    <label for="quantity">Quantity</label>
+                    <input type="text" class="form-control" name="quantity" placeholder="Enter quantity">
+                </div>
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <input type="text" class="form-control" name="description" placeholder="Enter description">
+                </div>
+                <div class="form-group">
+                    <label for="city">City</label>
+                    <input type="text" class="form-control" name="city" placeholder="Enter city">
+                </div>
+                <div class="form-group">
+                    <input type="file" style="width:180px" name="productImage" accept="image/*" /><br />
+                </div>
+
+                <button id="addProduct" class="btn btn-primary">Submit</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

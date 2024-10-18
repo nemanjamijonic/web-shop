@@ -1,0 +1,201 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Register</title>
+    <link rel="stylesheet" href="../Content/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/Content/Site.css" />
+    <script src="../Scripts/jquery-3.4.1.min.js"></script>
+
+
+    <script>
+        $(document).ready(function () {
+
+            $.get("/users/GetLoggedinUser", function (data, status) {
+                //console.log(data)
+
+                if (data == null || data.Role != 0) {
+                    alert("You are not customer!")
+                    location.href = "Login.html";
+                }
+
+            });
+
+            document.getElementById("home").href = "Customer.html";
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const productId = urlParams.get('productId');
+
+            const reviewId = urlParams.get('reviewId');
+
+            if (reviewId != null && reviewId != "") {
+
+                var url = "/reviews/GetReview/?reviewId=" + reviewId;
+
+                $.get(url, function (data, status) {
+                    console.log(data)
+
+                    $("input[type=text][name=title]").val(data.Title);
+                    $("input[type=text][name=content]").val(data.Content);
+
+
+                });
+
+               
+
+            }
+
+            $("#addReview").click(function () {
+
+                var object = new Object();
+                object.Title = $("input[type=text][name=title]").val();
+                object.Content = $("input[type=text][name=content]").val();
+                
+                var reviewImage = $("input[type=file][name=reviewImage]").val();
+
+                console.log(reviewImage)
+                
+                var imageName = reviewImage.slice(12, reviewImage.length);
+
+                object.ImageURL = imageName.split('.')[0]
+
+
+                
+
+                console.log(object)
+
+
+                if (object.Title.trim() == "") {
+                    alert("Title cannot be empty!")
+                    return
+                }
+
+
+                if (object.Content.trim() == "") {
+                    alert("Content cannot be empty!")
+                    return
+                }
+
+
+
+                if (object.ImageURL.trim() == "") {
+                    alert("ImageURL cannot be empty!")
+                    return
+                }
+
+            
+
+                if (reviewId != null && reviewId != "") {
+
+                    object.Id = reviewId
+
+                    $.ajax({
+                        url: '/customers/UpdateReview',
+                        type: 'PUT',
+                        contentType: 'application/json; charset=utf-8',
+                        dataType: 'json',
+                        data: JSON.stringify(object),
+                        statusCode: {
+                            200: function (data) {
+
+                                var object = JSON.stringify(data);
+                                object = jQuery.parseJSON(object);
+
+                                alert("Review successfully updated!");
+
+                                location.href = "Customer.html";
+
+                            },
+                            401: function (data) {
+                                alert(data.responseText);
+                            },
+                            400: function (data) {
+                                alert(data.responseText);
+                            },
+                            405: function (data) {
+                                alert(data.responseText);
+                            }
+                        }
+                    });
+
+                } else {
+
+                    object.ProductId = productId
+
+                    $.ajax({
+                        url: '/customers/CreateReview',
+                        type: 'POST',
+                        contentType: 'application/json; charset=utf-8',
+                        dataType: 'json',
+                        data: JSON.stringify(object),
+                        statusCode: {
+                            200: function (data) {
+
+                                var object = JSON.stringify(data);
+                                object = jQuery.parseJSON(object);
+
+                                alert("Review successfully added!");
+
+                                location.href = "Customer.html";
+
+                            },
+                            401: function (data) {
+                                alert(data.responseText);
+                            },
+                            400: function (data) {
+                                alert(data.responseText);
+                            }
+                        }
+                    });
+                }
+
+             
+              
+
+
+            });
+
+
+
+
+        });
+    </script>
+
+</head>
+<body>
+
+    <div class="nav">
+        <ul class="nav">
+            <li class="nav-item" style="float: left;">
+                <a class="nav-link active" id="home" style="color: black;">Home</a>
+            </li>
+
+        </ul>
+    </div>
+    <br />
+
+    <div class="container" >
+
+            <div class="col-md-3 col-md-offset-3 form-container">
+                <h2>Review</h2>    
+
+                <div class="form-group">
+                    <label >Title</label>
+                    <input type="text" class="form-control" id="title" name="title" placeholder="Enter your username">
+                </div>
+
+                <div class="form-group">
+                    <label>Content</label>
+                    <input type="text" class="form-control" id="content" name="content" placeholder="Enter your username">
+                </div>
+
+                <div class="form-group">
+                    <input type="file" style="width:180px"  name="reviewImage" accept="image/*" /><br />
+                </div>
+
+                <button id="addReview" class="btn btn-primary">Submit</button>
+            </div>
+  
+    </div>
+</body>
+</html>

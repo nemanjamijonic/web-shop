@@ -1,0 +1,228 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Index</title>
+    <link rel="stylesheet" href="../Content/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/Content/Site.css" />
+    <script src="../Scripts/jquery-3.4.1.min.js"></script>
+    <script type="text/javascript">
+
+        var Products = new Array();
+
+        $(document).ready(function () {
+
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const productId = urlParams.get('productId');
+            console.log(productId)
+
+
+            var url = "/reviews/GetProductReviews?productId=" + productId;
+
+
+            //console.log(url)
+
+            $.get(url, function (data, status) {
+                ShowReviews(data);
+            });
+
+            $.get("/users/GetLoggedinUser", function (data, status) {
+                //console.log(data)
+
+                if (data == null)
+                {
+                    document.getElementById("home").href = "Index.html";
+                }
+                else if (data.Role == 0) {
+                    document.getElementById("home").href = "Customer.html";
+                }
+                else if (data.Role == 1) {
+                    document.getElementById("home").href = "Salesman.html";
+                }
+                else {
+                    document.getElementById("home").href = "Admin.html";
+                }
+
+
+            });
+
+
+      
+
+
+           
+
+        });
+
+
+        function deleteReview(reviewId, productId) {
+            //alert(quantity)
+            //console.log(productId)
+
+
+            var object = new Object();
+            object.Id = reviewId
+
+            $.ajax({
+                url: '/customers/DeleteReview',
+                type: "DELETE",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                data: JSON.stringify(object),
+                statusCode: {
+                    200: function (data) {
+
+                        var object = JSON.stringify(data);
+                        object = jQuery.parseJSON(object);
+
+                        var text = "Review succesfully deleted!";
+
+                        alert(text);
+
+
+                    },
+                    403: function (data) {
+                        alert(data.responseText);
+                    },
+                    404: function (data) {
+                        alert(data.responseText);
+                    },
+                    400: function (data) {
+                        alert(data.responseText);
+                    }
+                }
+            });
+
+            var url = "/reviews/GetProductReviews?productId=" + productId;
+
+            var a = 5;
+            //console.log(url)
+
+            $.get(url, function (data, status) {
+                ShowReviews(data);
+            });
+        }
+
+        function ShowReviews(data) {
+
+            var AllReviews = "";
+            Reviews = data;
+
+
+
+
+            AllReviews += "<table class='table table-striped'>";
+            AllReviews += "<thread><tr> <th scope='col'> Product name </th> <th scope='col'> Reviewer </th> <th scope='col'> Title </th>  <th scope='col'> Content </th>"
+                + "<th scope='col'> Review Image </th> <th scope='col'> Edit </th>  <th scope='col'> Delete </th>"
+                + "</tr> </thread> ";
+            AllReviews += "<tbody>";
+            for (review in data) {
+                var picture = "../Images/" + `${data[review].ImageURL}` + ".jpg";
+
+                var currentUser = GetCurrentUser();
+                var userOwnsReview = UserOwnsReview(currentUser, data[review].ReviewerUsername)
+
+
+                AllReviews += "<tr>" +
+                    "<td>" + `${data[review].ProductName}` + "</td>" +
+                    "<td>" + `${data[review].ReviewerUsername}` + "</td>" +
+                    "<td>" + `${data[review].Title}` + "</td>" +
+                    "<td>" + `${data[review].Content}` + "</td>" +
+                    "<td>" + "<img class='picture' src=" + picture + " />" + "</td>";
+
+
+                if (userOwnsReview) {
+                    AllReviews += "<td>" + "<a href=AddReview.html?reviewId=" + `${data[review].Id}` + "> Edit review </a>" + "</td>";
+                    AllReviews += "<td>" + "<button onclick='deleteReview(\"" + data[review].Id + "\", \"" + data[review].ProductId + "\")'>Delete</button>" + "</td>";
+
+                } else {
+
+                    AllReviews += "<td> </td>";
+                    AllReviews += "<td> </td>";
+                }
+
+                AllReviews += "</tr>";
+            }
+            AllReviews += "</tbody>";
+            AllReviews += "</table>";
+
+
+
+            $("#showReviews").html(AllReviews);
+
+
+            if (Reviews.length == 0) {
+                alert("This product has no reviews!")
+                return
+            }
+        }
+
+
+
+        function GetCurrentUser() {
+            var result;
+
+
+            var result = "";
+            $.ajax({
+                url: "/users/GetLoggedinUser",
+                async: false,
+                success: function (data) {
+                    result = data;
+                }
+            });
+            return result;
+
+
+          
+        }
+
+
+        function UserOwnsReview(data, reviewerUsername) {
+
+
+            var object = JSON.stringify(data);
+            object = jQuery.parseJSON(object);
+
+            if (object == null) {
+                return false;
+            }
+
+            if (object.Username == reviewerUsername) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+
+
+
+
+
+
+    </script>
+
+</head>
+<body>
+
+
+    <div class="nav">
+        <ul class="nav">
+            <li class="nav-item" style="float: left;">
+                <a class="nav-link active" id="home" style="color: black;">Home</a>
+            </li>
+
+        </ul>
+    </div>
+    <br />
+
+    <br /> <br />
+    <div id="showReviews">
+
+    </div>
+
+
+</body>
+</html>

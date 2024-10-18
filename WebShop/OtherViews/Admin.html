@@ -1,0 +1,721 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Admin</title>
+    <link rel="stylesheet" href="/Content/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/Content/Site.css" />
+    <script src="/Scripts/jquery-3.4.1.min.js"></script>
+    <script>
+
+        $(document).ready(function () {
+            $.get("/users/GetLoggedinUser", function (data, status) {
+
+                if (data == null || data.Role != 2) {
+                    alert("You are not admin!")
+                    location.href = "Login.html";
+                }
+            });
+
+            $("#editProfile").click(function () {
+
+                $.get("/users/GetLoggedinUser", function (data, status) {
+                    location.href = "ViewProfile.html?username=" + data.Username;
+                });
+
+            });
+
+            $("#filterProducts").click(function () {
+                var filterValue = $('#status').val();
+                var object = new Object();
+
+                object.Filter = filterValue;
+                $.ajax({
+                    url: '/admins/Filter',
+                    type: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    data: JSON.stringify(object),
+                    success: function (data) {
+                        ShowProducts(data);
+                    },
+                    error: function (data) {
+                    }
+                });
+
+            });
+
+
+            $("#sortProducts").click(function () {
+
+                var object = new Object();
+                object.SortBy = $("input[name='sortby']:checked").val();
+                object.SortOrder = $("input[name='sortorder']:checked").val();
+
+                var sortBy = parseInt(object.SortBy);
+                var sortOrder = parseInt(object.SortOrder);
+
+                $.ajax({
+                    url: '/products/Sort',
+                    type: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    data: JSON.stringify(object),
+                    success: function (data) {
+                        object.SortBy = sortBy;
+                        object.SortOrder = sortOrder;
+                        ShowProducts(data);
+                    },
+                    error: function (data) {
+                    }
+                });
+
+            });
+
+           
+
+            $("#logout").click(function () {
+
+                $.post("/users/Logout", function () {
+                    location.href = "Login.html";
+                });
+
+            });
+
+            $.get("/admins/GetAllUsers", function (data, status) {
+                ShowSearchAndSortUsers();
+                HideFilterAndSortProducts();
+                ShowUsers(data);
+            });
+
+            $("#productsPage").click(function () {
+                $.get("/products/GetProducts", function (data, status) {
+                    HideSearchAndSortUsers();
+                    ShowFilterAndSortProducts();
+                    ShowProducts(data);
+                });
+                HideSearchAndSortUsers();
+            });
+
+
+
+
+            $("#usersPage").click(function () {
+                $.get("/admins/GetAllUsers", function (data, status) {
+                    ShowSearchAndSortUsers();
+                    HideFilterAndSortProducts();
+                    ShowUsers(data);
+                });
+                ShowSearchAndSortUsers();
+            });
+
+            $("#ordersPage").click(function () {
+                HideSearchAndSortUsers();
+                HideFilterAndSortProducts();
+                $.get("/admins/GetAllOrders", function (data, status) {
+                    ShowOrders(data);
+                });
+
+
+            });
+
+            $("#sortUsers").click(function () {
+
+                var object = new Object();
+                object.SortBy = $("input[name='sortby']:checked").val();
+                object.SortOrder = $("input[name='sortorder']:checked").val();
+
+                var sortBy = parseInt(object.SortBy);
+                var sortOrder = parseInt(object.SortOrder);
+
+                $.ajax({
+                    url: '/admins/Sort',
+                    type: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    data: JSON.stringify(object),
+                    success: function (data) {
+                        object.SortBy = sortBy;
+                        object.SortOrder = sortOrder;
+                        ShowUsers(data);
+
+                    },
+                    error: function (data) {
+                    }
+                });
+
+            });
+
+
+            $("#searchUsers").click(function () {
+
+                var object = new Object();
+                object.Name = $("input[type=text][name=name]").val().toLowerCase();
+                object.Surname = $("input[type=text][name=surname]").val().toLowerCase();
+                object.DateFrom = $("input[type=date][name=datefrom]").val().toLowerCase();
+                object.DateTo = $("input[type=date][name=dateto]").val().toLowerCase();
+                var role = $('#role').val();
+
+                if (role == "0") {
+                    object.Role = 0;
+                }
+                else if (role == "1") {
+                    object.Role = 1;
+                }
+                else if (role == "2")
+                {
+                    object.Role = "2";
+                }
+
+
+
+                if (object.Name === "" && object.Surname === "" && object.DateFrom === "" && object.DateTo === "" && object.Role == "") {
+                    $.get("/admins/GetAllUsers", function (data, status) {
+                        console.log(data);
+                        ShowUsers(data);
+                    });
+                }
+
+                if (object.DateFrom == "")
+                {
+                    object.DateFrom = new Date(-8640000000000000);
+                }
+
+                if (object.DateTo == "") {
+                    object.DateTo = new Date(8640000000000000);
+                }
+
+                
+
+                var counter = 0;
+
+                if (object.Name.trim() !== "") {
+                    counter++;
+                }
+
+                if (object.Surname.trim() !== "") {
+                    counter++;
+                }
+
+             
+
+                if (counter >= 2) {
+                    object.IsCombined = true;
+                }
+
+                if (object.DateFrom > object.DateTo)
+                {
+                    alert("Date From has to be less than Date To");
+                    return;
+                }
+
+
+
+                $.ajax({
+                    url: '/admins/Search',
+                    type: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    data: JSON.stringify(object),
+                    success: function (data) {
+                        object.Name = $("input[type=text][name=name]").val("");
+                        object.Surname = $("input[type=text][name=surname]").val("");
+                        object.DateFrom = $("input[type=date][name=datefrom]").val("");
+                        object.DateTo = $("input[type=date][name=dateto]").val("");
+                        ShowUsers(data);
+
+                    },
+                    error: function (data) {
+                    }
+                });
+
+            });
+
+        });
+
+
+        function HideSearchAndSortUsers() {
+            $('#adminSearchUsers').hide();
+            $('#adminSortUsers').hide();
+        }
+
+        function ShowSearchAndSortUsers() {
+            $('#adminSearchUsers').show();
+            $('#adminSortUsers').show();
+        }
+
+        function HideFilterAndSortProducts() {
+            $('#adminSortProducts').hide();
+            $('#adminFilterProducts').hide();
+        }
+
+        function ShowFilterAndSortProducts() {
+            $('#adminSortProducts').show();
+            $('#adminFilterProducts').show();
+        }
+
+        function ShowOrders(data) {
+
+            var AllOrders = "";
+
+
+            AllOrders += "<table class='table table-striped'>";
+            AllOrders += "<thread><tr> <th scope='col'> Id </th> <th scope='col'> ProductId </th> <th scope='col'> Product Name </th>"
+                + "<th scope = 'col' > Product Price </th> <th scope = 'col' > Product image </th>  <th scope='col'> Customer name </th> <th scope='col'> OrderDate </th> <th scope='col'> OrderState </th> <th scope='col'> Aprove/Deny </th>"
+                + " </tr> </thread> ";
+            AllOrders += "<tbody>";
+            for (order in data) {
+                var picture = "../Images/" + `${data[order].Product.ImageURL}` + ".jpg";
+                var postDate = new Date(`${data[order].OrderDate}`);
+                var formattedDate = postDate.toLocaleDateString("en-GB");
+
+                var orderState = "";
+                if (data[order].OrderState == 0) {
+                    orderState = "Active";
+                } else if (data[order].OrderState == 1) {
+                    orderState = "Completed";
+                } else {
+                    orderState = "Canceled";
+                }
+
+                if (orderState == "Active") {
+                    AllOrders += "<tr>" +
+                        "<td>" + `${data[order].Id}` + "</td>" +
+                        "<td>" + `${data[order].Product.Id}` + "</td>" +
+                        "<td>" + `${data[order].Product.Name}` + "</td>" +
+                        "<td>" + `${data[order].Product.Price}` + "</td>" +
+                        "<td>" + "<img class='picture' src=" + picture + " />" + "</td>" +
+                        "<td>" + `${data[order].Customer.Name}` + "</td>" +
+                        "<td>" + formattedDate + "</td>" +
+                        "<td>" + orderState + "</td>" +
+                        "<td>" + "<button onclick='completeOrder(\"" + data[order].Id + "\")'>Complete order</button>" + "</td>" +
+                        "<td>" + "<button onclick='cancelOrder(\"" + data[order].Id + "\")'>Cancel order</button>" + "</td>" +
+                        "</tr>";
+                } else {
+
+                    AllOrders += "<tr>" +
+                        "<td>" + `${data[order].Id}` + "</td>" +
+                        "<td>" + `${data[order].Product.Id}` + "</td>" +
+                        "<td>" + `${data[order].Product.Name}` + "</td>" +
+                        "<td>" + `${data[order].Product.Price}` + "</td>" +
+                        "<td>" + "<img class='picture' src=" + picture + " />" + "</td>" +
+                        "<td>" + `${data[order].Customer.Name}` + "</td>" +
+                        "<td>" + formattedDate + "</td>" +
+                        "<td>" + orderState + "</td>" +
+                        "</tr>";
+                }
+
+
+
+
+            }
+            AllOrders += "</tbody>";
+            AllOrders += "</table>";
+
+            $("#content").html(AllOrders);
+        }
+
+
+        function cancelOrder(orderId) {
+
+
+            var object = new Object();
+            object.Id = orderId
+            object.Status = 1;
+
+            $.ajax({
+                url: '/admins/UpdateOrderStatus',
+                type: "PUT",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: false,
+                data: JSON.stringify(object),
+                statusCode: {
+                    200: function (data) {
+
+                        var object = JSON.stringify(data);
+                        object = jQuery.parseJSON(object);
+
+                        var text = "Canceled order with id " + object.Id;
+
+                        alert(text);
+
+
+                    },
+                    403: function (data) {
+                        alert(data.responseText);
+                    },
+                    404: function (data) {
+                        alert(data.responseText);
+                    },
+                    400: function (data) {
+                        alert(data.responseText);
+                    }
+                }
+            });
+
+            $.get("/admins/GetAllOrders", function (data, status) {
+                ShowOrders(data);
+            });
+
+        }
+
+        function completeOrder(orderId) {
+
+
+            var object = new Object();
+            object.OrderId = orderId
+
+            $.ajax({
+                url: '/customers/CompleteOrder',
+                type: "POST",
+                async: false,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                data: JSON.stringify(object),
+                statusCode: {
+                    200: function (data) {
+
+                        var object = JSON.stringify(data);
+                        object = jQuery.parseJSON(object);
+
+                        var text = "Completed order with id " + object.Id;
+
+                        alert(text);
+
+
+                    },
+                    403: function (data) {
+                        alert(data.responseText);
+                    },
+                    404: function (data) {
+                        alert(data.responseText);
+                    },
+                    400: function (data) {
+                        alert(data.responseText);
+                    }
+                }
+            });
+
+            $.get("/admins/GetAllOrders", function (data, status) {
+                ShowOrders(data);
+            });
+
+        }
+
+        function ShowProducts(data) {
+
+            var AllProducts = "";
+
+            AllProducts += "<table class='table table-striped'>";
+            AllProducts += "<thread><tr> <th scope='col'> Name </th> <th scope='col'> Price </th> <th scope='col'> Quantity </th>"
+                + "<th scope = 'col' > Description </th > <th scope='col'> Image </th> <th scope='col'> PostDate </th> <th scope='col'> City </th>"
+                + "<th scope='col'> Review </th> </tr> </thread> ";
+            AllProducts += "<tbody>";
+            for (product in data) {
+                var picture = "../Images/" + `${data[product].ImageURL}` + ".jpg";
+                var postDate = new Date(`${data[product].PostDate}`);
+                var formattedDate = postDate.toLocaleDateString("en-GB");
+
+                if (data[product].Reviews.length > 0) {
+
+                    AllProducts += "<tr>" +
+                        "<td>" + `${data[product].Name}` + "</td>" +
+                        "<td>" + `${data[product].Price}` + "</td>" +
+                        "<td>" + `${data[product].Quantity}` + "</td>" +
+                        "<td>" + `${data[product].Description}` + "</td>" +
+                        "<td>" + "<img class='picture' src=" + picture + " />" + "</td>" +
+                        "<td>" + formattedDate + "</td>" +
+                        "<td>" + `${data[product].City}` + "</td>" +
+                        "<td>" + "<a href=Reviews.html?productId=" + `${data[product].Id}` + "> Show reviews </a>" + "</td>" +
+                        "<td>" + "<a href=AddProduct.html?productId=" + data[product].Id + "> EDIT </a>" + "</td>" +
+                        "<td> <button onclick='deleteProduct(\"" + data[product].Id + "\")'>DELETE</button></td>" +
+                        "</tr>";
+                } else {
+
+                    AllProducts += "<tr>" +
+                        "<td>" + `${data[product].Name}` + "</td>" +
+                        "<td>" + `${data[product].Price}` + "</td>" +
+                        "<td>" + `${data[product].Quantity}` + "</td>" +
+                        "<td>" + `${data[product].Description}` + "</td>" +
+                        "<td>" + "<img class='picture' src=" + picture + " />" + "</td>" +
+                        "<td>" + formattedDate + "</td>" +
+                        "<td>" + `${data[product].City}` + "</td>" +
+                        "<td>" + "No reviews" + "</td>" +
+                        "<td>" + "<a href=AddProduct.html?productId=" + data[product].Id + "> EDIT </a>" + "</td>" +
+                        "<td> <button onclick='deleteProduct(\"" + data[product].Id + "\")'>DELETE</button></td>" +
+                        "</tr>";
+
+                }
+
+
+            }
+            AllProducts += "</tbody>";
+            AllProducts += "</table>";
+
+            $("#content").html(AllProducts);
+        }
+
+        function ShowUsers(data)
+        {
+            var AllUsers = "";
+            
+            AllUsers += "<table class='table table-striped'>";
+            AllUsers += "<thread><tr> <th scope='col'> Username </th> <th scope='col'> Name </th> <th scope='col'> Surname </th>"
+                + "<th scope = 'col' > Gender </th > <th scope='col'> Email </th> <th scope='col'> Birth Date </th> <th scope='col'> Role </th>"
+                + " <th scope='col'> Edit </th> <th scope='col'> Delete </th> </tr > </thread > ";
+
+            for (user in data)
+            {
+                var postDate = new Date(`${data[user].BirthDate}`);
+                var formattedDate = postDate.toLocaleDateString("en-GB");
+                var Gender;
+                var Role;
+                if (data[user].Gender == 0) {
+                    Gender = "Male";
+                }
+                else
+                {
+                    Gender = "Female";
+                }
+
+                if (data[user].Role == 0) {
+                    Role = "Customer";
+                }
+                else if (data[user].Role == 1) {
+                    Role = "Salesman";
+                }
+                AllUsers += "<tr>" +
+                    "<td>" + `${data[user].Username}` + "</td>" +
+                    "<td>" + `${data[user].Name}` + "</td>" +
+                    "<td>" + `${data[user].Surname}` + "</td>" +
+                    "<td>" + Gender + "</td>" +
+                    "<td>" + `${data[user].Email}` + "</td>" +
+                    "<td>" + formattedDate + "</td>" +
+                    "<td>" + Role + "</td>" +
+                    "<td> <a href=AddSalesman.html?username=" + data[user].Username + ">EDIT </a> </td>" +
+                    "<td> <button onclick='deleteUser(\"" + data[user].Username + "\")'>DELETE</button></td>" +
+                "</tr>";
+               
+            }
+            AllUsers += "</table>"
+            $("#content").html(AllUsers);
+        }
+
+
+        function deleteProduct(id) {
+
+            var object = new Object();
+            object.Id = id;
+
+            $.ajax({
+                url: '/salesmans/DeleteProduct',
+                type: "DELETE",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: false,
+                data: JSON.stringify(object),
+                statusCode: {
+                    200: function (data) {
+
+                        var object = JSON.stringify(data);
+                        object = jQuery.parseJSON(object);
+
+                        var text = "Product succesfully deleted!";
+
+                        alert(text);
+
+                    },
+                    403: function (data) {
+                        alert(data.responseText);
+                    },
+                    404: function (data) {
+                        alert(data.responseText);
+                    },
+                    400: function (data) {
+                        alert(data.responseText);
+                    }
+                }
+            });
+
+            $.get("/products/GetProducts", function (data, status) {
+                ShowSearchAndSortUsers();
+                HideFilterAndSortProducts();
+                ShowProducts(data);
+            });
+
+
+        }
+
+        function deleteUser(username) {
+
+            var object = new Object();
+            object.Username = username;
+
+            $.ajax({
+                url: '/admins/DeleteUser',
+                type: "DELETE",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: false,
+                data: JSON.stringify(object),
+                statusCode: {
+                    200: function (data) {
+
+                        var object = JSON.stringify(data);
+                        object = jQuery.parseJSON(object);
+
+                        var text = "Salesman succesfully deleted!";
+
+                        alert(text);
+
+                    },
+                    403: function (data) {
+                        alert(data.responseText);
+                    },
+                    404: function (data) {
+                        alert(data.responseText);
+                    },
+                    400: function (data) {
+                        alert(data.responseText);
+                    }
+                }
+            });
+
+            $.get("/admins/GetAllUsers", function (data, status) {
+                ShowSearchAndSortUsers();
+                HideFilterAndSortProducts();
+                ShowUsers(data);
+            });
+
+
+        }
+
+    </script>
+</head>
+<body>
+    <div class="nav">
+        <ul class="nav">
+            <li class="nav-item" style="float: left;">
+                <a class="nav-link active" style="color: black;" id="usersPage"> System Users </a>
+            </li>
+            <li class="nav-item" style="float: left;">
+                <a class="nav-link active" style="color: black;" id="productsPage"> Products </a>
+            </li>
+            <li class="nav-item" style="float: left;">
+                <a class="nav-link active" style="color: black;" id="ordersPage"> Orders </a>
+            </li>
+            <li class="nav-item" style="float: left;">
+                <a class="nav-link active" style="color: black;" href="/OtherViews/AddSalesman.html"> Add New Salesman </a>
+            </li>
+            <li class="nav-item" style="float: left;">
+                <a class="nav-link active" style="color: black;" href="/OtherViews/AdminReview.html"> Reviews </a>
+            </li>
+            <li class="nav-item" style="float: right; margin-right: 10px">
+                <a class="nav-link" id="editProfile" style="color: black;">Profile</a>
+            </li>
+            <li class="nav-item" style="float: right; margin-right: 10px">
+                <a class="nav-link" id="logout" style="color: black;" href="/OtherViews/Login.html">Logout</a>
+            </li>
+        </ul>
+    </div>
+
+    <div style="border:1px dashed black;" id="adminSearchUsers">
+        <label class="move_labels"> Name </label>
+        <input type="text" name="name" />
+
+        <label class="move_labels"> Surname </label>
+        <input type="text" name="surname" />
+
+        <label class="move_labels"> Date From </label>
+        <input type="date" name="datefrom" />
+
+        <label class="move_labels"> Date to </label>
+        <input type="date" name="dateto" />
+
+        <label class="move_labels"> Role </label>
+        <select class="move_labels" id="role">
+            <option value="0">ALL</option>
+            <option value="1">CUSTOMER</option>
+            <option value="2">SALESMAN</option>
+        </select>
+
+        <input type="submit" value=" Search " id="searchUsers">
+
+    </div>
+
+
+    <br />
+    <div style="border:1px dashed black;" id="adminSortUsers">
+        <label class="move_labels" style=""> Sorting:  </label>
+
+        <input type="radio" name="sortby" value="0">
+        <label class="move_labels"> Sort By Name </label>
+
+        <input type="radio" name="sortby" value="1">
+        <label class="move_labels"> Sort By Birth Date </label>
+
+        <input type="radio" name="sortby" value="2">
+        <label class="move_labels"> Sort By Role </label>
+
+        <label class="move_labels" style=""> Order:  </label>
+
+        <input type="radio" name="sortorder" value="0">
+        <label class="move_labels"> Ascending </label>
+
+        <input type="radio" name="sortorder" value="1">
+        <label class="move_labels"> Descending </label>
+
+        <input type="submit" style="padding-left: 10px" value=" Sort " id="sortUsers">
+
+    </div>
+
+
+    <div id="adminSortProducts">
+
+        <div style="border:1px dashed black;">
+            <label class="move_labels" style=""> Sorting:  </label>
+            <input type="radio" name="sortby" value="0">
+            <label> Sort By Name </label>
+
+            <input type="radio" name="sortby" value="2">
+            <label> Sort By Price </label>
+
+            <input type="radio" name="sortby" value="1">
+            <label> Sort By PostDate </label>
+
+            <label class="move_labels" style=""> Order:  </label>
+
+            <input type="radio" name="sortorder" value="0">
+            <label> Ascending </label>
+
+            <input type="radio" name="sortorder" value="1">
+            <label> Descending </label>
+
+            <input type="submit" style="padding-left: 10px" value=" Sort " id="sortProducts">
+        </div>
+
+
+    </div>
+    <br />
+    <div style="border:1px dashed black;" id="adminFilterProducts" >
+        <div>
+            <label class="move_labels" for="status"> Filter By Product Status</label>
+            <select class="move_labels" id="status">
+                <option value="0">ALL</option>
+                <option value="2">NOT AVAILABLE</option>
+                <option value="1">AVAILABLE</option>
+            </select>
+
+
+            <input type="submit" value=" Filter " id="filterProducts">
+        </div>
+    </div>
+
+    <br />
+    <div id="content">
+
+    </div>
+
+</body>
+</html>

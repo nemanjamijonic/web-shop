@@ -1,0 +1,5 @@
+﻿d904ac30-c0c4-4cf7-9978-7a154e9dc73b|product1|55.25|5|basic description|imgURL1|19-06-2023|NS|True|False|kupac
+b5656bfe-584c-4bfb-a25b-82e61a08ed67|product2|75.12|7|testing|imgURL1|20-07-2023|BG|True|False|kupac
+a2213f95-39b2-45b7-9669-6821fc4af90d|Kruska|555|7|TestiranjeIzmena|imgURL1|01-07-2023|SO|True|False|kupac
+b63774c8-a9a0-4330-aa96-451eda2f13c8|product4|122.22|0|new product|imgURL1|01-07-2023|ZR|False|False|kupac
+b5656bfe-584c-4bfb-a25b-82e61a08ed67|product2|75.12|5|testing|imgURL1|20-07-2023|BG|True|False|novikorisniktest

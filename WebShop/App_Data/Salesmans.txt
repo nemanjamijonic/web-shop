@@ -1,0 +1,3 @@
+prodavac|111222|sima|mata|Male|testing@gmail.com|21-11-2009|Salesman|False
+kika|kika|Kika|Kikic|Female|kikiriki@gmail.com|19-05-1999|Salesman|False
+dodatsalesmantest|123|dodat|salesman|Male|nemanj@gmailc.om|15-10-1985|Salesman|False

@@ -1,0 +1,5 @@
+﻿d904ac30-c0c4-4cf7-9978-7a154e9dc73b|product1|55.25|5|basic description|imgURL1|19-06-2023|NS|True|False|kika
+b5656bfe-584c-4bfb-a25b-82e61a08ed67|product2|75.12|5|testing|imgURL1|20-07-2023|BG|True|False|kika
+a2213f95-39b2-45b7-9669-6821fc4af90d|Jabuka|555|7|Testiranje|imgURL1|01-07-2023|KG|True|False|kika
+a6b88be1-4cf4-4b1e-b8af-d0a63a37214a|aaaaaaaaaaa|6|2|TESTTESTTESTTEST|imgURL1|01-07-2023|GG|True|False|kika
+a79af9b0-a0c8-42ed-8f20-92ead8527548|noviproizvodtest|60|6|OpisTest|imgURL1|02-07-2023|NS|True|False|kika

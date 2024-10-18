@@ -1,0 +1,2 @@
+b119ed8b-2d1e-4c42-8302-4eecc6f41820|b5656bfe-584c-4bfb-a25b-82e61a08ed67|product2|75.12|5|testing|imgURL1|20-07-2023|BG|True|False|kupac|test|peratest|perictest|Female|testperarope@gmail.com|20-04-2005|Customer|False|PRVI REVIEW|PRVI REVIEW TEKSTCXBXCBCX|imgURL1|False|True
+2380e3cd-6d0b-4bfe-9438-02a0619601b3|b5656bfe-584c-4bfb-a25b-82e61a08ed67|product2|75.12|2|testing|imgURL1|20-07-2023|BG|True|False|novikorisniktest|novitest|novinovitest|3211|Male|nemanja@gmail.com|18-10-1968|Customer|False|12312|fsasafasfasf|imgURL1|False|True

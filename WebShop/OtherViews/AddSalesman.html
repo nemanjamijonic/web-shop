@@ -1,0 +1,249 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Add Salesman</title>
+    <link rel="stylesheet" href="/Content/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/Content/Site.css" />
+    <script src="/Scripts/jquery-3.4.1.min.js"></script>
+    <script>
+
+        $(document).ready(function () {
+            $.get("/users/GetLoggedinUser", function (data, status) {
+
+                if (data == null || data.Role != 2) {
+                    alert("You are not admin!")
+                    location.href = "Login.html";
+                }
+            });
+
+            $("#editProfile").click(function () {
+
+                $.get("/users/GetLoggedinUser", function (data, status) {
+                    location.href = "ViewProfile.html?username=" + data.Username;
+                });
+
+            });
+
+            $("#logout").click(function () {
+
+                $.post("/users/Logout", function () {
+                    location.href = "Login.html";
+                });
+
+            });
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const username = urlParams.get('username');
+
+            var isUserUpdate = username != "" && username != null;
+
+            if (isUserUpdate) {
+                var url = "/admins/GetByUsername?username=" + username;
+                $.get(url, function (data, status) {
+
+                    $("input[type=text][name=username]").val(data.Username);
+                    $("input[type=password][name=password]").val(data.Password);
+                    $("input[type=password][name=confirmPassword]").val(data.Password);
+                    $("input[type=text][name=name]").val(data.Name);
+                    $("input[type=text][name=surname]").val(data.Surname);
+                    $("input[type=text][name=gender]").val(data.Gender);
+                    $("input[type=text][name=email]").val(data.Email);
+                    $("input[type=date][name=dateOfBirth]").val(data.DateOfBirth);
+                    document.getElementById("username").disabled = true;
+
+                });
+            }
+
+
+            $("#addSalesman").click(function () {
+
+                var object = new Object();
+                object.Username = $("input[type=text][name=username]").val();
+                object.Password = $("input[type=password][name=password]").val();
+                object.ConfirmPassword = $("input[type=password][name=confirmPassword]").val();
+                object.Name = $("input[type=text][name=name]").val();
+                object.Surname = $("input[type=text][name=surname]").val();
+                parseInt($('#genderId').val());
+                object.DateOfBirth = $("input[type=date][name=dateOfBirth]").val();
+                object.Email = $("input[type=text][name=email]").val();
+
+                if (object.Username.trim() == "")
+                {
+                    alert("Username cannot be empty!")
+                    return;
+                }
+
+                if (object.Password.trim() == "")
+                {
+                    alert("Password cannot be empty!")
+                    return;
+                }
+
+                if (object.ConfirmPassword.trim() == "") {
+                    alert("Confirm password cannot be empty!")
+                    return;
+                }
+
+                if (object.Name.trim() == "") {
+                    alert("Name cannot be empty!")
+                    return;
+                }
+
+                if (object.Surname.trim() == "") {
+                    alert("Surname cannot be empty!")
+                    return;
+                }
+
+                if (object.Email == "") {
+                    alert("Email cannot be empty!");
+                    return;
+                }
+
+                if (object.DateOfBirth.trim() == "") {
+                    alert("Please select date of birth")
+                    return
+                }
+
+                if (username != null && username != "") {
+
+                    object.Username = username
+
+                    $.ajax({
+                        url: '/admins/Edit',
+                        type: 'PUT',
+                        contentType: 'application/json; charset=utf-8',
+                        dataType: 'json',
+                        data: JSON.stringify(object),
+                        statusCode: {
+                            200: function (data) {
+
+                                var object = JSON.stringify(data);
+                                object = jQuery.parseJSON(object);
+
+                                alert("Salesman successfully updated!");
+
+                                location.href = "Admin.html";
+
+                            },
+                            401: function (data) {
+                                alert(data.responseText);
+                            },
+                            400: function (data) {
+                                alert(data.responseText);
+                            },
+                            405: function (data) {
+                                alert(data.responseText);
+                            }
+                        }
+                    });
+
+                } else {
+
+
+                    $.ajax({
+                        url: '/admins/CreateSalesman',
+                        type: 'POST',
+                        contentType: 'application/json; charset=utf-8',
+                        dataType: 'json',
+                        data: JSON.stringify(object),
+                        statusCode: {
+                            201: function (data) {
+
+                                var object = JSON.stringify(data);
+                                object = jQuery.parseJSON(object);
+                                console.log(data);
+                                alert("Salesman successfully added!");
+
+                                location.href = "Admin.html";
+
+                            },
+                            401: function (data) {
+                                alert(data.responseText);
+                            },
+                            400: function (data) {
+                                alert(data.responseText);
+                            }
+                        }
+                    });
+                }
+            });
+
+        });
+
+
+
+    </script>
+</head>
+<body>
+    <div class="nav">
+        <ul class="nav">
+            <li class="nav-item" style="float: left;">
+                <a class="nav-link active" style="color: black;" href="/OtherViews/Admin.html"> System Users </a>
+            </li>
+            <li class="nav-item" style="float: left;">
+                <a class="nav-link active" style="color: black;" href="/OtherViews/Admin.html"> Products </a>
+            </li>
+            <li class="nav-item" style="float: left;">
+                <a class="nav-link active" style="color: black;" href="/OtherViews/Admin.html"> Orders </a>
+            </li>
+            <li class="nav-item" style="float: left;">
+                <a class="nav-link active" style="color: black;" href="/OtherViews/AddSalesman.html"> Add New Salesman </a>
+            </li>
+            <li class="nav-item" style="float: right; margin-right: 10px">
+                <a class="nav-link" id="editProfile" style="color: black;">Profile</a>
+            </li>
+            <li class="nav-item" style="float: right; margin-right: 10px">
+                <a class="nav-link" id="logout" style="color: black;" href="/OtherViews/Login.html">Logout</a>
+            </li>
+        </ul>
+    </div>
+    
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-md-offset-3 form-container">
+                <h2>Salesman</h2>
+
+
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" class="form-control" id="username" name="username" placeholder="Enter your username">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" class="form-control" name="password" placeholder="Enter your password">
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password</label>
+                    <input type="password" class="form-control" name="confirmPassword" placeholder="Confirm your password">
+                </div>
+                <div class="form-group">
+                    <label for="name">Name</label>
+                    <input type="text" class="form-control" name="name" placeholder="Enter your name">
+                </div>
+                <div class="form-group">
+                    <label for="surname">Surname</label>
+                    <input type="text" class="form-control" name="surname" placeholder="Enter your surname">
+                </div>
+                <div class="form-group">
+                    <label for="gender">Gender</label>
+                    <select class="form-control" id="genderId" name="gender">
+                        <option value="0">Male</option>
+                        <option value="1">Female</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="text" class="form-control" name="email" placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                    <label for="dateOfBirth">Date of Birth</label>
+                    <input type="date" class="form-control" name="dateOfBirth">
+                </div>
+                <button id="addSalesman" class="btn btn-primary">Submit</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

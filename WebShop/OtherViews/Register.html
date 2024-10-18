@@ -1,0 +1,183 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Register</title>
+    <link rel="stylesheet" href="../Content/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/Content/Site.css" />
+    <script src="../Scripts/jquery-3.4.1.min.js"></script>
+
+
+    <script>
+        $(document).ready(function () {
+
+
+            $("#registerButton").click(function () {
+
+
+                var object = new Object();
+                object.Username = $("input[type=text][name=username]").val();
+                object.Password = $("input[type=password][name=password]").val();
+                object.ConfirmPassword = $("input[type=password][name=confirmPassword]").val();
+                object.Name = $("input[type=text][name=name]").val();
+                object.Surname = $("input[type=text][name=surname]").val();
+                object.Gender = parseInt($('#genderId').val());
+                object.Email = $("input[type=text][name=email]").val();
+                object.DateOfBirth = $("input[type=date][name=dateOfBirth]").val();
+                
+
+                if (object.Username.trim() == "") {
+                    alert("Username cannot be empty!")
+                    return
+                }
+
+
+                if (object.Password.trim() == "") {
+                    alert("Password cannot be empty!")
+                    return
+                }
+
+
+
+                if (object.ConfirmPassword.trim() == "") {
+                    alert("Password confirmation cannot be empty!")
+                    return
+                }
+
+                if (object.Password.trim() !== object.Password.trim()) {
+                    alert("passwords not matching!")
+                    return
+                }
+
+
+                if (object.Name.trim() == "") {
+                    alert("Name cannot be empty!")
+                    return
+                }
+
+
+                if (object.Surname.trim() == "") {
+                    alert("Surname cannot be empty!")
+                    return
+                }
+
+                if (object.Email.trim() == "") {
+                    alert("Email cannot be empty!")
+                    return
+                }
+
+                if (object.DateOfBirth.trim() == "") {
+                    alert("Please select date of birth")
+                    return
+                }
+
+                var selectedDate = new Date(object.DateOfBirth);
+                var today = new Date();
+
+
+                if (selectedDate.setHours(0, 0, 0, 0) >= today.setHours(0, 0, 0, 0)) {
+                    alert("Date of birth has to be in past!");
+                    return
+                }
+
+
+
+                $.ajax({
+                    url: '/users/Register',
+                    type: 'POST',
+                    contentType: 'application/json; charset=utf-8',
+                    dataType: 'json',
+                    data: JSON.stringify(object),
+                    statusCode: {
+                        201: function (data) {
+
+                            var object = JSON.stringify(data);
+                            object = jQuery.parseJSON(object);
+
+                            alert("You have been registered successfully!");
+
+                            location.href = "Login.html";
+
+                        },
+                        403: function (data) {
+                            alert(data.responseText);
+                        },
+                        400: function (data) {
+                            alert(data.responseText);
+                        }
+                    }
+                });
+
+               
+
+
+            });
+
+        });
+    </script>
+
+</head>
+<body>
+
+    <div class="nav">
+        <ul class="nav">
+            <li class="nav-item" style="float: left;">
+                <a class="nav-link active" style="color: black;" href="/OtherViews/Index.html">Home</a>
+            </li>
+            <li class="nav-item" style="float: right; margin-right: 10px">
+                <a class="nav-link" style="color: black;" href="/OtherViews/Register.html">Register</a>
+            </li>
+            <li class="nav-item" style="float: right; margin-right: 10px">
+                <a class="nav-link" style="color: black;" href="/OtherViews/Login.html">Login</a>
+            </li>
+
+        </ul>
+    </div>
+    <br />
+
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-md-offset-3 form-container">
+                <h2>Registration</h2>
+
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" class="form-control" id="username" name="username" placeholder="Enter your username">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" class="form-control" name="password" placeholder="Enter your password">
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password</label>
+                    <input type="password" class="form-control" name="confirmPassword" placeholder="Confirm your password">
+                </div>
+                <div class="form-group">
+                    <label for="name">Name</label>
+                    <input type="text" class="form-control" name="name" placeholder="Enter your name">
+                </div>
+                <div class="form-group">
+                    <label for="surname">Surname</label>
+                    <input type="text" class="form-control" name="surname" placeholder="Enter your surname">
+                </div>
+                <div class="form-group">
+                    <label for="gender">Gender</label>
+                    <select class="form-control" id="genderId" name="gender">
+                        <option value="0">Male</option>
+                        <option value="1">Female</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="text" class="form-control" name="email" placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                    <label for="dateOfBirth">Date of Birth</label>
+                    <input type="date" class="form-control" name="dateOfBirth">
+                </div>
+                <button id="registerButton" class="btn btn-primary">Submit</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

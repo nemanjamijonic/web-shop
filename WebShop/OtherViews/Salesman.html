@@ -1,0 +1,275 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Salesman</title>
+    <link rel="stylesheet" href="/Content/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/Content/Site.css" />
+    <script src="/Scripts/jquery-3.4.1.min.js"></script>
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+
+            $.get("/users/GetLoggedinUser", function (data, status) {
+
+                if (data == null || data.Role != 1) {
+                    alert("You are not salesman!")
+                    location.href = "Login.html";
+                }
+            });
+
+            $("#editProfile").click(function () {
+
+                $.get("/users/GetLoggedinUser", function (data, status) {
+                    location.href = "ViewProfile.html?username=" + data.Username;
+                });
+
+            });
+
+            $("#logout").click(function () {
+
+                $.post("/users/Logout", function () {
+                    location.href = "Login.html";
+                });
+
+            });
+
+            $("#sortSalesmanProducts").click(function () {
+
+                var object = new Object();
+                object.SortBy = $("input[name='sortby']:checked").val();
+                object.SortOrder = $("input[name='sortorder']:checked").val();
+
+                var sortBy = parseInt(object.SortBy);
+                var sortOrder = parseInt(object.SortOrder);
+
+                $.ajax({
+                    url: '/salesmans/Sort',
+                    type: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    data: JSON.stringify(object),
+                    success: function (data) {
+                        object.SortBy = sortBy;
+                        object.SortOrder = sortOrder;
+                        ShowProducts(data);
+                    },
+                    error: function (data) {
+                    }
+                });
+
+            });
+
+            $.get("/salesmans/GetProducts", function (data, status) {
+                ShowProducts(data);
+            });
+
+
+            $("#filter").click(function () {
+                var filterValue = $('#status').val();
+                var object = new Object();
+
+                object.Filter = filterValue;
+                $.ajax({
+                    url: '/salesmans/Filter',
+                    type: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    data: JSON.stringify(object),
+                    success: function (data) {
+                        ShowProducts(data);
+                    },
+                    error: function (data) {
+                    }
+                });
+
+            });
+
+
+        });
+
+        function ShowProducts(data) {
+
+            var AllProducts = "";
+            Products = data;
+
+            AllProducts += "<table class='table table-striped'>";
+            AllProducts += "<thread><tr> <th scope='col'> Id </th>  <th scope='col'> Name </th> <th scope='col'> Price </th> <th scope='col'> Quantity </th>"
+                + "<th scope = 'col' > Description </th > <th scope='col'> Image </th> <th scope='col'> PostDate </th> <th scope='col'> City </th>"
+                + "<th scope='col'> Review </th> <th scope='col'> Edit Product </th>  <th scope='col'> Delete Product </th> </tr> </thread> ";
+            AllProducts += "<tbody>";
+            for (product in data) {
+                var picture = "../Images/" + `${data[product].ImageURL}` + ".jpg";
+                var postDate = new Date(`${data[product].PostDate}`);
+                var formattedDate = postDate.toLocaleDateString("en-GB");
+
+                if (data[product].Reviews.length > 0) {
+
+                    AllProducts += "<tr>" +
+                        "<td id='productId'>" + `${data[product].Id}` + "</td>" +
+                        "<td>" + `${data[product].Name}` + "</td>" +
+                        "<td>" + `${data[product].Price}` + "</td>" +
+                        "<td>" + `${data[product].Quantity}` + "</td>" +
+                        "<td>" + `${data[product].Description}` + "</td>" +
+                        "<td>" + "<img class='picture' src=" + picture + " />" + "</td>" +
+                        "<td>" + formattedDate + "</td>" +
+                        "<td>" + `${data[product].City}` + "</td>" +
+                        "<td>" + "<a href=Reviews.html?productId=" + `${data[product].Id}` + "> Show reviews </a>" + "</td>";
+                    if (data[product].IsAvaliable) {
+                        AllProducts += "<td>" + "<a href=AddProduct.html?productId=" + data[product].Id + "\")'> EDIT </a>" + "</td>" +
+                            "<td>" + "<button onclick='deleteProduct(\"" + data[product].Id + "\")'>DELETE</button>" + "</td>" +
+                            "</tr>";
+                    }
+                    else {
+                        AllProducts += "<td>  </td>" +
+                            "<td>  </td>" +
+                            "</tr>";
+                    }
+
+                } else {
+
+                    AllProducts += "<tr>" +
+                        "<td>" + `${data[product].Id}` + "</td>" +
+                        "<td>" + `${data[product].Name}` + "</td>" +
+                        "<td>" + `${data[product].Price}` + "</td>" +
+                        "<td>" + `${data[product].Quantity}` + "</td>" +
+                        "<td>" + `${data[product].Description}` + "</td>" +
+                        "<td>" + "<img class='picture' src=" + picture + " />" + "</td>" +
+                        "<td>" + formattedDate + "</td>" +
+                        "<td>" + `${data[product].City}` + "</td>" +
+                        "<td>" + "No reviews" + "</td>";
+
+                    if (data[product].IsAvaliable) {
+                        AllProducts += "<td>" + "<a href=AddProduct.html?productId=" + data[product].Id + "> EDIT </a>" + "</td>" +
+                            "<td>" + "<button onclick='deleteProduct(\"" + data[product].Id + "\")'>DELETE</button>" + "</td>" +
+                            "</tr>";
+                    }
+                    else {
+                        AllProducts += "<td>  </td>" +
+                            "<td>  </td>" +
+                            "</tr>";
+                    }
+
+                }
+
+
+            }
+            AllProducts += "</tbody>";
+            AllProducts += "</table>";
+
+            $("#content").html(AllProducts);
+        }
+
+
+        function deleteProduct(productId) {
+ 
+            var object = new Object();
+            object.Id = productId
+
+            $.ajax({
+                url: '/salesmans/DeleteProduct',
+                type: "DELETE",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: false,
+                data: JSON.stringify(object),
+                statusCode: {
+                    200: function (data) {
+
+                        var object = JSON.stringify(data);
+                        object = jQuery.parseJSON(object);
+
+                        var text = "Product succesfully deleted!";
+
+                        alert(text);
+
+                    },
+                    403: function (data) {
+                        alert(data.responseText);
+                    },
+                    404: function (data) {
+                        alert(data.responseText);
+                    },
+                    400: function (data) {
+                        alert(data.responseText);
+                    }
+                }
+            });
+
+            $.get("/salesmans/GetProducts", function (data, status) {
+                ShowProducts(data);
+            });
+        }
+
+    </script>
+
+</head>
+<body>
+
+    <div class="nav">
+        <ul class="nav">
+            <li class="nav-item" style="float: left;">
+                <a class="nav-link active" style="color: black;" href="/OtherViews/Salesman.html">Home</a>
+            </li>
+            <li class="nav-item" style="float: left;">
+                <a class="nav-link active" style="color: black;" href="/OtherViews/AddProduct.html">Add Product</a>
+            </li>
+            <li class="nav-item" style="float: right; margin-right: 10px">
+                <a class="nav-link" id="editProfile" style="color: black;">Profile</a>
+            </li>
+            <li class="nav-item" style="float: right; margin-right: 10px">
+                <a class="nav-link" id="logout" style="color: black;" href="/OtherViews/Login.html">Logout</a>
+            </li>
+        </ul>
+    </div>
+    <br />
+    <div id="sortProducts">
+
+        <div style="border:1px dashed black;">
+            <label class="move_labels" style=""> Sorting:  </label>
+            <input type="radio" name="sortby" value="0">
+            <label> Sort By Name </label>
+
+            <input type="radio" name="sortby" value="2">
+            <label> Sort By Price </label>
+
+            <input type="radio" name="sortby" value="1">
+            <label> Sort By PostDate </label>
+
+            <label class="move_labels" style=""> Order:  </label>
+
+            <input type="radio" name="sortorder" value="0">
+            <label> Ascending </label>
+
+            <input type="radio" name="sortorder" value="1">
+            <label> Descending </label>
+
+            <input type="submit" style="padding-left: 10px" value=" Sort " id="sortSalesmanProducts">
+        </div>
+
+
+    </div>
+    <br />
+    <div style="border:1px dashed black;">
+        <div>
+            <label class="move_labels" for="status"> Filter By Product Status</label>
+            <select class="move_labels" id="status">
+                <option value="0">ALL</option>
+                <option value="2">NOT AVAILABLE</option>
+                <option value="1">AVAILABLE</option>
+            </select>
+
+
+            <input type="submit" value=" Filter " id="filter">
+        </div>
+    </div>
+
+    <br /> <br />
+
+    <div id="content">
+
+    </div>
+
+
+</body>
+</html>
